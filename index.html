@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة تيسير للخدمات العامة - لوحة التحكم</title>
+    <title>منصة تيسير للخدمات العامة - الاستعلام والإدارة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -26,37 +26,65 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-xl text-slate-900">منصة تيسير لإدارة الأعمال</h1>
-                    <p class="text-xs text-slate-500">لوحة التحكم والتواصل المباشر</p>
+                    <p class="text-xs text-slate-500">متابعة الطلبات والنظام الإداري</p>
                 </div>
             </div>
             
             <div id="userStatus" class="flex items-center gap-3"></div>
         </header>
 
-        <!-- Login View -->
-        <div id="loginView" class="max-w-md mx-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mt-10">
-            <div class="text-center mb-6">
-                <div class="w-20 h-20 bg-[#2d6a4f]/10 rounded-full flex items-center justify-center mx-auto mb-3 text-[#2d6a4f] text-2xl font-bold">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h2 class="text-lg font-bold text-slate-900">تسجيل الدخول للمنصة</h2>
-                <p class="text-xs text-slate-500 mt-1">أدخل بيانات الاعتماد الخاصة بك للوصول إلى اللوحة</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المستخدم</label>
-                    <input type="text" id="loginUser" placeholder="أدخل اسم المستخدم" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">الرمز السري (PIN)</label>
-                    <input type="password" id="loginPin" placeholder="أدخل الرمز السري الخاص بك" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+        <!-- Main Landing / Login View (صفحة الدخول والاستعلام) -->
+        <div id="loginView" class="max-w-4xl mx-auto space-y-6 mt-6">
+            
+            <!-- قسم استعلام العميل -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#2d6a4f]/30 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-[#2d6a4f]"></div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-[#2d6a4f]/10 text-[#2d6a4f] flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">استعلام العملاء عن حالة الطلب</h2>
+                        <p class="text-xs text-slate-500">أدخل رقم جوالك لتفقد حالة الإنجاز واستلام عملك فوراً</p>
+                    </div>
                 </div>
 
-                <button onclick="handleLogin()" class="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
-                    دخول للنظام
-                </button>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="tel" id="searchClientPhone" placeholder="أدخل رقم جوالك (مثال: 05XXXXXXXX)" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    <button onclick="searchClientOrders()" class="bg-[#2d6a4f] hover:bg-[#1b4332] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-search"></i> استعلام
+                    </button>
+                </div>
+
+                <!-- نتيجة استعلام العميل -->
+                <div id="clientSearchResult" class="mt-4 hidden"></div>
             </div>
+
+            <!-- قسم دخول الإدارة والموظفين -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-md mx-auto">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-600 text-lg">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800">دخول الموظفين والإدارة</h3>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المستخدم</label>
+                        <input type="text" id="loginUser" placeholder="أدخل اسم المستخدم" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">الرمز السري (PIN)</label>
+                        <input type="password" id="loginPin" placeholder="أدخل الرمز السري الخاص بك" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
+                        دخول للنظام الإداري
+                    </button>
+                </div>
+            </div>
+
         </div>
 
         <!-- Admin Dashboard View -->
@@ -257,6 +285,57 @@
             window.open(`https://wa.me/${formattedPhone}?text=${encodedMsg}`, '_blank');
         }
 
+        // دالة الاستعلام الخارجي للعميل
+        async function searchClientOrders() {
+            const inputPhone = document.getElementById('searchClientPhone').value.trim();
+            const resultDiv = document.getElementById('clientSearchResult');
+
+            if (!inputPhone) {
+                alert('يرجى إدخال رقم الجوال للاستعلام');
+                return;
+            }
+
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `<p class="text-xs text-slate-500 py-2"><i class="fa-solid fa-spinner fa-spin ml-1"></i> جاري البحث عن الطلبات...</p>`;
+
+            const { data: orders, error } = await supabaseClient.from('orders').select('*');
+            if (error) {
+                resultDiv.innerHTML = `<p class="text-xs text-red-500">حدث خطأ أثناء الاستعلام. حاول مرة أخرى.</p>`;
+                return;
+            }
+
+            // تصفية المطابقة بالرقم
+            const clientOrders = orders.filter(o => o.client_phone && o.client_phone.includes(inputPhone.slice(-8)));
+
+            if (clientOrders.length === 0) {
+                resultDiv.innerHTML = `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs text-slate-600 text-center">لم نجد أي طلبات مرتبطة بـ (${inputPhone}). تأكد من إدخال الرقم الصحيح.</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-xs font-bold text-slate-700">نتائج البحث (${clientOrders.length}):</h4>
+                    ${clientOrders.map(o => `
+                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-800 text-xs">طلب #${o.id} - ${o.service_type}</span>
+                                <span class="px-2 py-0.5 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                    ${o.status === 'completed' ? 'مكتمل ومستلم' : 'قيد العمل والتنفيذ'}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500">التفاصيل: ${o.details || 'لا توجد ملاحظات إضافية'}</p>
+                            ${o.status === 'completed' ? `
+                                <div class="pt-2 border-t border-slate-200 flex flex-wrap gap-2">
+                                    ${o.work_link ? `<a href="${o.work_link}" target="_blank" class="bg-[#2d6a4f] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#1b4332]"><i class="fa-solid fa-link ml-1"></i>معاينة رابط العمل</a>` : ''}
+                                    ${o.work_file ? `<a href="${o.work_file}" target="_blank" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-700"><i class="fa-solid fa-download ml-1"></i>تحميل الملف المنجز</a>` : ''}
+                                </div>
+                            ` : `<p class="text-xs text-amber-700 font-medium"><i class="fa-solid fa-clock ml-1"></i>يعمل فريقنا على تجهيز طلبك حالياً، وسيتاح للتحميل فور الانتهاء.</p>`}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         function handleLogin() {
             const userInput = document.getElementById('loginUser').value.trim().toLowerCase();
             const pinInput = document.getElementById('loginPin').value.trim();
@@ -357,8 +436,7 @@
                 document.getElementById('orderForm').reset();
                 loadOrders();
 
-                // فتح الواتساب لإشعاره بالبدء
-                const initMsg = `أهلاً بك عزيزي ${clientName} 🌸\n\nتم استلام طلبك (${serviceType}) بنجاح في منصة تيسير للخدمات العامة، وجاري العمل عليه بواسطة فريقنا المختص.\n\nسنخبرك فور الانتهاء!`;
+                const initMsg = `أهلاً بك عزيزي ${clientName} 🌸\n\nتم استلام طلبك (${serviceType}) بنجاح في منصة تيسير للخدمات العامة، وجاري العمل عليه بواسطة فريقنا المختص.\n\nيمكنك الاستعلام عن طلبك برقم جوالك عبر موقعنا الرسمي فور الانتهاء!`;
                 if(confirm('تم حفظ الطلب بنجاح! هل ترغب في فتح الواتساب لإرسال إشعار للعميل بحالة الاستلام؟')) {
                     openWhatsApp(clientPhone, initMsg);
                 }
@@ -581,7 +659,6 @@
                 alert('تم حفظ وتسليم العمل بنجاح!');
                 loadOrders();
 
-                // توجيه تلقائي لواتساب العميل مع رابط التسليم
                 const finalWorkUrl = linkInput || workFileUrl;
                 const deliveryMsg = `أهلاً بك عزيزي ${targetOrder ? targetOrder.client_name : ''} 🎉\n\nيسعدنا إبلاغك بأنه تم إنجاز طلبك (${targetOrder ? targetOrder.service_type : ''}) بنجاح!\n\n🔗 يمكنك معاينة واستلام عملك المنجز عبر الرابط التالي:\n${finalWorkUrl}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.`;
                 
