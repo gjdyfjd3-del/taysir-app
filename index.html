@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-xl text-slate-900">منصة تيسير لإدارة الأعمال</h1>
-                    <p class="text-xs text-slate-500">لوحة التحكم والمتابعة الإحصائية</p>
+                    <p class="text-xs text-slate-500">لوحة التحكم والتواصل المباشر</p>
                 </div>
             </div>
             
@@ -170,7 +170,6 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                     <h2 class="text-lg font-bold text-slate-900">سجل الطلبات وتصفية الأعمال</h2>
                     
-                    <!-- Filters -->
                     <div class="flex flex-wrap gap-2">
                         <select id="filterEmp" onchange="renderAdminTable()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none bg-slate-50">
                             <option value="ALL">جميع الموظفين</option>
@@ -200,8 +199,7 @@
                                 <th class="p-3">الموظف المسؤول</th>
                                 <th class="p-3">ملف العميل</th>
                                 <th class="p-3">الحالة</th>
-                                <th class="p-3">رابط العمل</th>
-                                <th class="p-3">ملف العمل المرفق</th>
+                                <th class="p-3">التواصل والمتابعة</th>
                             </tr>
                         </thead>
                         <tbody id="adminOrdersTable"></tbody>
@@ -244,6 +242,20 @@
             "raghad": { pin: "2024", role: "emp", name: "رغد" },
             "rinad": { pin: "2025", role: "emp", name: "ريناد" }
         };
+
+        function formatPhoneNumber(phone) {
+            let p = phone.trim().replace(/\D/g, '');
+            if (p.startsWith('05')) {
+                p = '966' + p.substring(1);
+            }
+            return p;
+        }
+
+        function openWhatsApp(phone, message) {
+            const formattedPhone = formatPhoneNumber(phone);
+            const encodedMsg = encodeURIComponent(message);
+            window.open(`https://wa.me/${formattedPhone}?text=${encodedMsg}`, '_blank');
+        }
 
         function handleLogin() {
             const userInput = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -320,11 +332,14 @@
             btn.disabled = true;
 
             const fileUrl = await uploadFileToSupabase('clientFilePicker');
+            const clientName = document.getElementById('clientName').value;
+            const clientPhone = document.getElementById('clientPhone').value;
+            const serviceType = document.getElementById('serviceType').value;
 
             const newOrder = {
-                client_name: document.getElementById('clientName').value,
-                client_phone: document.getElementById('clientPhone').value,
-                service_type: document.getElementById('serviceType').value,
+                client_name: clientName,
+                client_phone: clientPhone,
+                service_type: serviceType,
                 assigned_employee: document.getElementById('assignedEmployee').value,
                 client_file: fileUrl,
                 details: document.getElementById('details').value,
@@ -341,6 +356,12 @@
             } else {
                 document.getElementById('orderForm').reset();
                 loadOrders();
+
+                // فتح الواتساب لإشعاره بالبدء
+                const initMsg = `أهلاً بك عزيزي ${clientName} 🌸\n\nتم استلام طلبك (${serviceType}) بنجاح في منصة تيسير للخدمات العامة، وجاري العمل عليه بواسطة فريقنا المختص.\n\nسنخبرك فور الانتهاء!`;
+                if(confirm('تم حفظ الطلب بنجاح! هل ترغب في فتح الواتساب لإرسال إشعار للعميل بحالة الاستلام؟')) {
+                    openWhatsApp(clientPhone, initMsg);
+                }
             }
         }
 
@@ -365,7 +386,6 @@
             const pending = allOrdersData.filter(o => o.status !== 'completed').length;
             const completed = allOrdersData.filter(o => o.status === 'completed').length;
 
-            // الموظفون الشغالون والشاغرون
             const activeEmps = new Set(allOrdersData.filter(o => o.status !== 'completed').map(o => o.assigned_employee));
             const idleEmpsCount = employeeList.filter(emp => !activeEmps.has(emp)).length;
 
@@ -374,7 +394,6 @@
             document.getElementById('kpiCompletedOrders').innerText = completed;
             document.getElementById('kpiIdleEmps').innerText = idleEmpsCount;
 
-            // Badges
             const badgesDiv = document.getElementById('empStatusBadges');
             badgesDiv.innerHTML = employeeList.map(emp => {
                 const hasPending = activeEmps.has(emp);
@@ -386,12 +405,10 @@
                 `;
             }).join('');
 
-            // Charts
             renderCharts(pending, completed);
         }
 
         function renderCharts(pending, completed) {
-            // Status Chart
             const ctx1 = document.getElementById('statusChart').getContext('2d');
             if(statusChartInstance) statusChartInstance.destroy();
             statusChartInstance = new Chart(ctx1, {
@@ -406,7 +423,6 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Employee Chart
             const empCounts = employeeList.map(emp => allOrdersData.filter(o => o.assigned_employee === emp).length);
             const ctx2 = document.getElementById('empChart').getContext('2d');
             if(empChartInstance) empChartInstance.destroy();
@@ -439,33 +455,38 @@
 
             const adminTable = document.getElementById('adminOrdersTable');
             if(filtered.length === 0) {
-                adminTable.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-xs text-slate-400">لا توجد نتائج مطابقة للتصنيفات المختارة</td></tr>`;
+                adminTable.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">لا توجد نتائج مطابقة للتصنيفات المختارة</td></tr>`;
                 return;
             }
 
-            adminTable.innerHTML = filtered.map(o => `
-                <tr class="border-b border-slate-100 hover:bg-slate-50">
-                    <td class="p-3 font-semibold">#${o.id}</td>
-                    <td class="p-3">${o.client_name}</td>
-                    <td class="p-3 font-mono text-xs">${o.client_phone}</td>
-                    <td class="p-3">${o.service_type}</td>
-                    <td class="p-3"><span class="bg-[#2d6a4f]/10 text-[#2d6a4f] px-2 py-1 rounded text-xs font-medium">${o.assigned_employee}</span></td>
-                    <td class="p-3">
-                        ${o.client_file ? `<a href="${o.client_file}" target="_blank" class="text-[#2d6a4f] underline text-xs font-bold"><i class="fa-solid fa-paperclip ml-1"></i>عرض الملف</a>` : '-'}
-                    </td>
-                    <td class="p-3">
-                        <span class="px-2 py-1 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                            ${o.status === 'completed' ? 'مكتمل ومسلّم' : 'قيد التنفيذ'}
-                        </span>
-                    </td>
-                    <td class="p-3">
-                        ${o.work_link ? `<a href="${o.work_link}" target="_blank" class="text-[#2d6a4f] underline text-xs">معاينة الرابط</a>` : '-'}
-                    </td>
-                    <td class="p-3">
-                        ${o.work_file ? `<a href="${o.work_file}" target="_blank" class="text-emerald-600 underline text-xs font-bold"><i class="fa-solid fa-file-arrow-down ml-1"></i>ملف العمل</a>` : '-'}
-                    </td>
-                </tr>
-            `).join('');
+            adminTable.innerHTML = filtered.map(o => {
+                const sendMsg = o.status === 'completed' 
+                    ? `أهلاً بك عزيزي ${o.client_name} 🎉\nتم إنجاز طلبك (${o.service_type}) بنجاح!\n\nيمكنك استلام وتفقد عملك عبر الرابط/الملف التالي:\n${o.work_link || o.work_file}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.`
+                    : `أهلاً بك عزيزي ${o.client_name} 🌸\nنود تذكيرك بأن طلبك (${o.service_type}) قيد العمل والتنفيذ حالياً لدى فريق تيسير.`;
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-semibold">#${o.id}</td>
+                        <td class="p-3">${o.client_name}</td>
+                        <td class="p-3 font-mono text-xs">${o.client_phone}</td>
+                        <td class="p-3">${o.service_type}</td>
+                        <td class="p-3"><span class="bg-[#2d6a4f]/10 text-[#2d6a4f] px-2 py-1 rounded text-xs font-medium">${o.assigned_employee}</span></td>
+                        <td class="p-3">
+                            ${o.client_file ? `<a href="${o.client_file}" target="_blank" class="text-[#2d6a4f] underline text-xs font-bold"><i class="fa-solid fa-paperclip ml-1"></i>عرض الملف</a>` : '-'}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                ${o.status === 'completed' ? 'مكتمل ومسلّم' : 'قيد التنفيذ'}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="openWhatsApp('${o.client_phone}', \`${sendMsg}\`)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1 shadow-sm">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> إشعار بالواتس
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function renderEmployeeView() {
@@ -511,14 +532,15 @@
                                 <input type="file" id="file_picker_${o.id}" class="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs bg-slate-50 file:ml-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2d6a4f] file:text-white">
                             </div>
                             <button onclick="submitWork(${o.id})" id="btn_submit_${o.id}" class="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-xs font-medium py-2 rounded-lg transition">
-                                تسليم العمل (إرسال تلقائي للعميل)
+                                تسليم العمل (وإرسال عبر الواتساب)
                             </button>
                         </div>
                     ` : `
-                        <div class="pt-2 border-t border-slate-100 text-xs text-emerald-600 font-medium space-y-1">
+                        <div class="pt-2 border-t border-slate-100 text-xs text-emerald-600 font-medium space-y-2">
                             <div><i class="fa-solid fa-check-circle ml-1"></i> تم تسليم العمل بنجاح</div>
-                            ${o.work_link ? `<div>رابط العمل: <a href="${o.work_link}" target="_blank" class="underline">${o.work_link}</a></div>` : ''}
-                            ${o.work_file ? `<div>ملف العمل: <a href="${o.work_file}" target="_blank" class="underline">فتح الملف المرفق</a></div>` : ''}
+                            <button onclick="openWhatsApp('${o.client_phone}', \`أهلاً بك عزيزي ${o.client_name} 🎉\nتم إنجاز طلبك (${o.service_type}) بنجاح!\n\nرابط العمل / الملف المرفق:\n${o.work_link || o.work_file}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.\`)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1 shadow-sm">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> إعادة إرسال الرابط للعميل بالواتس
+                            </button>
                         </div>
                     `}
                 </div>
@@ -543,6 +565,8 @@
                 workFileUrl = await uploadFileToSupabase(`file_picker_${id}`);
             }
 
+            const targetOrder = allOrdersData.find(o => o.id === id);
+
             const { error } = await supabaseClient.from('orders').update({
                 work_link: linkInput || '',
                 work_file: workFileUrl || '',
@@ -551,11 +575,17 @@
 
             if(error) {
                 alert('حدث خطأ أثناء التسليم: ' + error.message);
-                btn.innerText = 'تسليم العمل (إرسال تلقائي للعميل)';
+                btn.innerText = 'تسليم العمل (وإرسال عبر الواتساب)';
                 btn.disabled = false;
             } else {
-                alert('تم تسليم العمل وإشعار العميل بنجاح!');
+                alert('تم حفظ وتسليم العمل بنجاح!');
                 loadOrders();
+
+                // توجيه تلقائي لواتساب العميل مع رابط التسليم
+                const finalWorkUrl = linkInput || workFileUrl;
+                const deliveryMsg = `أهلاً بك عزيزي ${targetOrder ? targetOrder.client_name : ''} 🎉\n\nيسعدنا إبلاغك بأنه تم إنجاز طلبك (${targetOrder ? targetOrder.service_type : ''}) بنجاح!\n\n🔗 يمكنك معاينة واستلام عملك المنجز عبر الرابط التالي:\n${finalWorkUrl}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.`;
+                
+                openWhatsApp(targetOrder.client_phone, deliveryMsg);
             }
         }
     </script>
