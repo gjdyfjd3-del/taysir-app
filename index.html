@@ -3,502 +3,668 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة تيسير - لوحة التحكم الإدارية</title>
-
-    <!-- Tailwind CSS CDN -->
+    <title>منصة تيسير للخدمات العامة - الاستعلام والإدارة</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- FontAwesome Icons CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts: Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                        }
-                    },
-                    fontFamily: {
-                        cairo: ['Cairo', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <!-- Header Navigation -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+<body class="bg-slate-50 min-h-screen text-slate-800">
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6">
+        <!-- Header with Logo -->
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <button id="toggleSidebar" class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden focus:outline-none">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
-                <div class="flex items-center gap-2">
-                    <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                        ت
+                <div class="w-14 h-14 bg-[#2d6a4f] rounded-xl flex items-center justify-center text-white shadow-md overflow-hidden p-1 bg-white border border-[#2d6a4f]">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#2d6a4f" stroke-width="6"/>
+                        <text x="50" y="58" font-size="38" font-weight="bold" fill="#2d6a4f" text-anchor="middle" font-family="Tajawal">ت</text>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl text-slate-900">منصة تيسير لإدارة الأعمال</h1>
+                    <p class="text-xs text-slate-500">متابعة الطلبات والنظام الإداري</p>
+                </div>
+            </div>
+            
+            <div id="userStatus" class="flex items-center gap-3"></div>
+        </header>
+
+        <!-- Main Landing / Login View (صفحة الدخول والاستعلام) -->
+        <div id="loginView" class="max-w-4xl mx-auto space-y-6 mt-6">
+            
+            <!-- قسم استعلام العميل -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#2d6a4f]/30 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-[#2d6a4f]"></div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-[#2d6a4f]/10 text-[#2d6a4f] flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-slate-900 leading-tight">منصة تيسير</h1>
-                        <p class="text-xs text-slate-500">لوحة التحكم والموظفين</p>
+                        <h2 class="text-base font-bold text-slate-900">استعلام العملاء عن حالة الطلب</h2>
+                        <p class="text-xs text-slate-500">أدخل رقم جوالك لتفقد حالة الإنجاز واستلام عملك فوراً</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="tel" id="searchClientPhone" placeholder="أدخل رقم جوالك (مثال: 05XXXXXXXX)" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    <button onclick="searchClientOrders()" class="bg-[#2d6a4f] hover:bg-[#1b4332] text-white px-6 py-2.5 rounded-xl text-sm font-medium transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-search"></i> استعلام
+                    </button>
+                </div>
+
+                <!-- نتيجة استعلام العميل -->
+                <div id="clientSearchResult" class="mt-4 hidden"></div>
+            </div>
+
+            <!-- قسم دخول الإدارة والموظفين -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 max-w-md mx-auto">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-600 text-lg">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800">دخول الموظفين والإدارة</h3>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">اسم المستخدم</label>
+                        <input type="text" id="loginUser" placeholder="أدخل اسم المستخدم" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">الرمز السري (PIN)</label>
+                        <input type="password" id="loginPin" placeholder="أدخل الرمز السري الخاص بك" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
+                        دخول للنظام الإداري
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Admin Dashboard View -->
+        <div id="adminView" class="hidden space-y-6">
+            <!-- KPIs Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-folder-open"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">إجمالي الطلبات</span>
+                        <span id="kpiTotalOrders" class="text-xl font-bold text-slate-800">0</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-spinner"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">قيد التنفيذ</span>
+                        <span id="kpiPendingOrders" class="text-xl font-bold text-amber-600">0</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-check-circle"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">الطلبات المكتملة</span>
+                        <span id="kpiCompletedOrders" class="text-xl font-bold text-emerald-600">0</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-user-clock"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">موظفون بانتظار مهام</span>
+                        <span id="kpiIdleEmps" class="text-xl font-bold text-purple-600">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Supabase Connection Indicator -->
-            <div class="flex items-center gap-3">
-                <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <span>جاري الاتصال بـ Supabase...</span>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-[#2d6a4f]"></i> توزيع حالات الطلبات
+                    </h3>
+                    <div class="h-56 relative flex items-center justify-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
                 </div>
-                <div class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
-                    أ
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-bar text-[#2d6a4f]"></i> المهام المسندة حسب الموظف
+                    </h3>
+                    <div class="h-56 relative">
+                        <canvas id="empChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Availability Badges -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-[#2d6a4f]"></i> حالة التفرغ والعمل الحالية للموظفين
+                </h3>
+                <div id="empStatusBadges" class="flex flex-wrap gap-3"></div>
+            </div>
+
+            <!-- Add New Order Form -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-[#2d6a4f]"></i> إسناد طلب جديد
+                </h2>
+                <form id="orderForm" onsubmit="createOrder(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">اسم العميل</label>
+                        <input type="text" id="clientName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">رقم جوال العميل (رسمي)</label>
+                        <input type="tel" id="clientPhone" placeholder="05XXXXXXXX" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">نوع الخدمة / الطلب</label>
+                        <input type="text" id="serviceType" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">إسناد إلى الموظف</label>
+                        <select id="assignedEmployee" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                            <option value="ديانا">ديانا</option>
+                            <option value="عمرو">عمرو</option>
+                            <option value="روان">روان</option>
+                            <option value="رغد">رغد</option>
+                            <option value="ريناد">ريناد</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">إرفاق ملف العميل (من الجهاز)</label>
+                        <input type="file" id="clientFilePicker" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs bg-slate-50 file:ml-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#2d6a4f] file:text-white hover:file:bg-[#1b4332]">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">تفاصيل الطلب والتعليمات</label>
+                        <input type="text" id="details" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                    </div>
+                    <div class="md:col-span-3">
+                        <button type="submit" id="submitOrderBtn" class="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
+                            حفظ وإرسال الطلب للموظف
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filter & Orders Table -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <h2 class="text-lg font-bold text-slate-900">سجل الطلبات وتصفية الأعمال</h2>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <select id="filterEmp" onchange="renderAdminTable()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none bg-slate-50">
+                            <option value="ALL">جميع الموظفين</option>
+                            <option value="ديانا">ديانا</option>
+                            <option value="عمرو">عمرو</option>
+                            <option value="روان">روان</option>
+                            <option value="رغد">رغد</option>
+                            <option value="ريناد">ريناد</option>
+                        </select>
+
+                        <select id="filterStatus" onchange="renderAdminTable()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none bg-slate-50">
+                            <option value="ALL">جميع الحالات</option>
+                            <option value="pending">قيد العمل</option>
+                            <option value="completed">المنجزة فقط</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-right text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">#</th>
+                                <th class="p-3">العميل</th>
+                                <th class="p-3">رقم الجوال</th>
+                                <th class="p-3">الخدمة</th>
+                                <th class="p-3">الموظف المسؤول</th>
+                                <th class="p-3">ملف العميل</th>
+                                <th class="p-3">الحالة</th>
+                                <th class="p-3">التواصل والمتابعة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminOrdersTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </header>
 
-    <div class="flex flex-1 overflow-hidden">
-        
-        <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="fixed lg:static inset-y-0 right-0 z-20 w-64 bg-white border-l border-slate-200 transform translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col justify-between">
-            <div class="p-4 space-y-6">
-                <div>
-                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">القائمة الرئيسية</p>
-                    <nav class="space-y-1">
-                        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-brand-700 bg-brand-50 transition-all">
-                            <i class="fa-solid fa-chart-pie text-base"></i>
-                            <span>نظرة عامة</span>
-                        </button>
-                        <button onclick="switchTab('orders')" id="nav-orders" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
-                            <i class="fa-solid fa-cart-shopping text-base"></i>
-                            <span>إدارة الطلبات</span>
-                        </button>
-                        <button onclick="switchTab('employees')" id="nav-employees" class="nav-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
-                            <i class="fa-solid fa-users-gear text-base"></i>
-                            <span>إدارة الموظفين</span>
-                        </button>
-                    </nav>
-                </div>
-            </div>
-            
-            <div class="p-4 border-t border-slate-100 bg-slate-50 text-center">
-                <p class="text-[11px] text-slate-400">Taysir Platform Admin v2.5</p>
-            </div>
-        </aside>
-
-        <!-- Main Workspace -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            
-            <!-- Toast Banner -->
-            <div id="toast" class="hidden fixed bottom-5 left-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-                <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
-                <span id="toastMsg" class="text-xs font-medium">تم الحفظ بنجاح</span>
+        <!-- Employee View -->
+        <div id="empView" class="hidden space-y-6">
+            <div class="bg-[#2d6a4f]/10 border border-[#2d6a4f]/20 rounded-2xl p-4 flex items-center gap-3 text-[#2d6a4f] text-sm">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+                <p>مرحباً بك! تتم حماية خصوصية العملاء وحجب الأرقام. تعرض لك هذه الصفحة مهامك الخاصة فقط.</p>
             </div>
 
-            <!-- Tab 1: Dashboard Overview -->
-            <div id="section-dashboard" class="tab-content space-y-6">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">مرحباً بك في لوحة تحكم تيسير 👋</h2>
-                    <p class="text-xs text-slate-500 mt-1">متابعة الأداء وإدارة حسابات الموظفين والطلبات المفعلة.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500">إجمالي الموظفين</p>
-                            <h3 class="text-xl font-bold text-slate-900 mt-1" id="statStaffCount">0</h3>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500">الطلبات الكلية</p>
-                            <h3 class="text-xl font-bold text-slate-900 mt-1" id="statOrdersCount">0</h3>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-box font-bold"></i>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500">الطلبات المكتملة (أرسلت واتساب)</p>
-                            <h3 class="text-xl font-bold text-slate-900 mt-1" id="statCompletedCount">0</h3>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <h2 id="empWelcomeTitle" class="text-lg font-bold text-slate-900 mb-4">المهام المسندة إليك</h2>
+                <div id="empOrdersList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
-
-            <!-- Tab 2: Orders -->
-            <div id="section-orders" class="tab-content hidden space-y-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-900">إدارة الطلبات والأتمتة</h2>
-                        <p class="text-xs text-slate-500 mt-1">تحديث حالة الطلبات لإطلاق رسائل الواتساب التلقائية عبر Make.com</p>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-right text-xs">
-                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3">رقم الطلب</th>
-                                    <th class="p-3">اسم العميل</th>
-                                    <th class="p-3">رقم الواتساب</th>
-                                    <th class="p-3">الخدمة</th>
-                                    <th class="p-3">الحالة</th>
-                                    <th class="p-3 text-left">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ordersTableBody" class="divide-y divide-slate-100">
-                                <!-- Dynamic JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Employee Management -->
-            <div id="section-employees" class="tab-content hidden space-y-6">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">إدارة حسابات الموظفين</h2>
-                    <p class="text-xs text-slate-500 mt-1">إضافة وتعيين موظفي المنصة مع تحديد كلمات المرور والصلاحيات.</p>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Add Employee Form -->
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm h-fit">
-                        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100 text-slate-800">
-                            <i class="fa-solid fa-user-plus text-brand-600"></i>
-                            <h3 class="font-bold text-sm">إضافة موظف جديد</h3>
-                        </div>
-
-                        <form id="addStaffForm" onsubmit="handleStaffSubmit(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">اسم الموظف الكامل</label>
-                                <input type="text" id="staffName" required placeholder="مثال: محمد العمري" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">اسم المستخدم (Username)</label>
-                                <input type="text" id="staffUsername" required placeholder="مثال: m_omari" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">كلمة المرور</label>
-                                <input type="password" id="staffPassword" required placeholder="••••••••" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">الصلاحية / الدور</label>
-                                <select id="staffRole" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brand-500">
-                                    <option value="موظف تنفيذ">موظف تنفيذ طلبات</option>
-                                    <option value="خدمة عملاء">خدمة عملاء ودعم</option>
-                                    <option value="مشرف عام">مشرف عام (Admin)</option>
-                                </select>
-                            </div>
-
-                            <button type="submit" id="saveStaffBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-floppy-disk"></i>
-                                <span>حفظ الحساب في Supabase</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Existing Employees Table -->
-                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-slate-900">الموظفين المسجلين في النظام</h3>
-                            <button onclick="fetchStaffFromSupabase()" class="text-xs text-brand-600 hover:underline font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-arrows-rotate"></i> تحديث القائمة
-                            </button>
-                        </div>
-                        <div class="overflow-x-auto flex-1">
-                            <table class="w-full text-right text-xs">
-                                <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
-                                    <tr>
-                                        <th class="p-3">اسم الموظف</th>
-                                        <th class="p-3">اسم المستخدم</th>
-                                        <th class="p-3">الصلاحية</th>
-                                        <th class="p-3 text-left">إجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="staffTableBody" class="divide-y divide-slate-100">
-                                    <!-- Dynamic JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-        </main>
+        </div>
     </div>
 
-    <!-- Application Script Logic -->
     <script>
-        // =========================================================
-        // 🔑 SUPABASE CONFIGURATION PLACEHOLDERS
-        // ضع روابط مفاتيح المشروع الخاص بك من Supabase هنا
-        // =========================================================
-        const SUPABASE_URL = "YOUR_SUPABASE_URL_HERE"; 
-        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+        const SUPABASE_URL = "https://brtpeqnyirfkffbzlaum.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_3zWJs8fgN3Hm-twO0DZxXw_IlhsV1-d";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let supabaseClient = null;
+        let currentUser = null;
+        let allOrdersData = [];
+        let statusChartInstance = null;
+        let empChartInstance = null;
 
-        // Fallback Local Storage Data (Used if Supabase config is not populated yet)
-        let localStaff = [
-            { id: 1, name: "عبدالله الشمري", username: "a_shammari", role: "مشرف عام" },
-            { id: 2, name: "فاطمة العمري", username: "f_omari", role: "موظف تنفيذ" }
-        ];
+        const employeeList = ["ديانا", "عمرو", "روان", "رغد", "ريناد"];
 
-        let localOrders = [
-            { id: "ORD-101", customer_name: "أحمد العتيبي", phone: "+966596519871", service: "تأسيس شركة", status: "قيد التنفيذ" },
-            { id: "ORD-102", customer_name: "سارة السليمان", phone: "+966501234567", service: "تجديد سجّل", status: "مكتمل" }
-        ];
+        const accounts = {
+            "admin": { pin: "admin123", role: "admin", name: "المدير العام" },
+            "diana": { pin: "2021", role: "emp", name: "ديانا" },
+            "amr": { pin: "2022", role: "emp", name: "عمرو" },
+            "rawan": { pin: "2023", role: "emp", name: "روان" },
+            "raghad": { pin: "2024", role: "emp", name: "رغد" },
+            "rinad": { pin: "2025", role: "emp", name: "ريناد" }
+        };
 
-        // Initialize Supabase Client
-        function initSupabase() {
-            const statusDiv = document.getElementById('connectionStatus');
-            
-            if (SUPABASE_URL !== "YOUR_SUPABASE_URL_HERE" && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY_HERE") {
-                try {
-                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    statusDiv.className = "flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
-                    statusDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Supabase متصل</span>`;
-                    fetchStaffFromSupabase();
-                    fetchOrdersFromSupabase();
-                } catch (e) {
-                    console.error("Supabase Connection Error:", e);
-                    showFallbackMode();
-                }
-            } else {
-                showFallbackMode();
+        function formatPhoneNumber(phone) {
+            let p = phone.trim().replace(/\D/g, '');
+            if (p.startsWith('05')) {
+                p = '966' + p.substring(1);
             }
+            return p;
         }
 
-        function showFallbackMode() {
-            const statusDiv = document.getElementById('connectionStatus');
-            statusDiv.className = "flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200";
-            statusDiv.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500"></span><span>وضع التجربة (تنسيق وضع العرض)</span>`;
-            renderStaffList(localStaff);
-            renderOrdersList(localOrders);
-            updateStats();
+        function openWhatsApp(phone, message) {
+            const formattedPhone = formatPhoneNumber(phone);
+            const encodedMsg = encodeURIComponent(message);
+            window.open(`https://wa.me/${formattedPhone}?text=${encodedMsg}`, '_blank');
         }
 
-        // Fetch Staff from Supabase Table 'staff'
-        async function fetchStaffFromSupabase() {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient.from('staff').select('*');
+        // دالة الاستعلام الخارجي للعميل
+        async function searchClientOrders() {
+            const inputPhone = document.getElementById('searchClientPhone').value.trim();
+            const resultDiv = document.getElementById('clientSearchResult');
+
+            if (!inputPhone) {
+                alert('يرجى إدخال رقم الجوال للاستعلام');
+                return;
+            }
+
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `<p class="text-xs text-slate-500 py-2"><i class="fa-solid fa-spinner fa-spin ml-1"></i> جاري البحث عن الطلبات...</p>`;
+
+            const { data: orders, error } = await supabaseClient.from('orders').select('*');
             if (error) {
-                console.error("Error fetching staff:", error);
-                renderStaffList(localStaff);
+                resultDiv.innerHTML = `<p class="text-xs text-red-500">حدث خطأ أثناء الاستعلام. حاول مرة أخرى.</p>`;
+                return;
+            }
+
+            // تصفية المطابقة بالرقم
+            const clientOrders = orders.filter(o => o.client_phone && o.client_phone.includes(inputPhone.slice(-8)));
+
+            if (clientOrders.length === 0) {
+                resultDiv.innerHTML = `<div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs text-slate-600 text-center">لم نجد أي طلبات مرتبطة بـ (${inputPhone}). تأكد من إدخال الرقم الصحيح.</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="space-y-3 pt-2">
+                    <h4 class="text-xs font-bold text-slate-700">نتائج البحث (${clientOrders.length}):</h4>
+                    ${clientOrders.map(o => `
+                        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-800 text-xs">طلب #${o.id} - ${o.service_type}</span>
+                                <span class="px-2 py-0.5 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                    ${o.status === 'completed' ? 'مكتمل ومستلم' : 'قيد العمل والتنفيذ'}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500">التفاصيل: ${o.details || 'لا توجد ملاحظات إضافية'}</p>
+                            ${o.status === 'completed' ? `
+                                <div class="pt-2 border-t border-slate-200 flex flex-wrap gap-2">
+                                    ${o.work_link ? `<a href="${o.work_link}" target="_blank" class="bg-[#2d6a4f] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#1b4332]"><i class="fa-solid fa-link ml-1"></i>معاينة رابط العمل</a>` : ''}
+                                    ${o.work_file ? `<a href="${o.work_file}" target="_blank" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-700"><i class="fa-solid fa-download ml-1"></i>تحميل الملف المنجز</a>` : ''}
+                                </div>
+                            ` : `<p class="text-xs text-amber-700 font-medium"><i class="fa-solid fa-clock ml-1"></i>يعمل فريقنا على تجهيز طلبك حالياً، وسيتاح للتحميل فور الانتهاء.</p>`}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function handleLogin() {
+            const userInput = document.getElementById('loginUser').value.trim().toLowerCase();
+            const pinInput = document.getElementById('loginPin').value.trim();
+
+            if(!accounts[userInput] || accounts[userInput].pin !== pinInput) {
+                alert('اسم المستخدم أو الرمز السري غير صحيح!');
+                return;
+            }
+
+            currentUser = accounts[userInput];
+
+            document.getElementById('loginView').classList.add('hidden');
+            if(currentUser.role === 'admin') {
+                document.getElementById('adminView').classList.remove('hidden');
             } else {
-                renderStaffList(data || []);
+                document.getElementById('empView').classList.remove('hidden');
+                document.getElementById('empWelcomeTitle').innerText = `المهام المسندة إلى: ${currentUser.name}`;
+            }
+
+            updateHeaderStatus();
+            loadOrders();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPin').value = '';
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('empView').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('userStatus').innerHTML = '';
+        }
+
+        function updateHeaderStatus() {
+            const statusDiv = document.getElementById('userStatus');
+            if(currentUser) {
+                statusDiv.innerHTML = `
+                    <div class="text-xs bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 flex items-center gap-2">
+                        <span class="font-bold text-[#2d6a4f]">${currentUser.name}</span>
+                        <button onclick="logout()" class="text-red-600 hover:text-red-800 mr-2"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+                    </div>
+                `;
             }
         }
 
-        // Fetch Orders from Supabase Table 'orders'
-        async function fetchOrdersFromSupabase() {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient.from('orders').select('*');
-            if (error) {
-                console.error("Error fetching orders:", error);
-                renderOrdersList(localOrders);
-            } else {
-                renderOrdersList(data || []);
+        async function uploadFileToSupabase(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            if(!fileInput || fileInput.files.length === 0) return '';
+
+            const file = fileInput.files[0];
+            const fileName = `${Date.now()}_${file.name}`;
+
+            const { data, error } = await supabaseClient.storage
+                .from('taysir-files')
+                .upload(fileName, file);
+
+            if(error) {
+                alert('حدث خطأ أثناء رفع الملف: ' + error.message);
+                return '';
             }
+
+            const { data: publicUrlData } = supabaseClient.storage
+                .from('taysir-files')
+                .getPublicUrl(fileName);
+
+            return publicUrlData.publicUrl;
         }
 
-        // Handle Form Submission for Adding Employee
-        async function handleStaffSubmit(e) {
+        async function createOrder(e) {
             e.preventDefault();
-            const btn = document.getElementById('saveStaffBtn');
+            const btn = document.getElementById('submitOrderBtn');
+            btn.innerText = 'جاري رفع الملف وحفظ الطلب...';
             btn.disabled = true;
 
-            const name = document.getElementById('staffName').value;
-            const username = document.getElementById('staffUsername').value;
-            const password = document.getElementById('staffPassword').value;
-            const role = document.getElementById('staffRole').value;
+            const fileUrl = await uploadFileToSupabase('clientFilePicker');
+            const clientName = document.getElementById('clientName').value;
+            const clientPhone = document.getElementById('clientPhone').value;
+            const serviceType = document.getElementById('serviceType').value;
 
-            if (supabaseClient) {
-                const { data, error } = await supabaseClient.from('staff').insert([
-                    { name, username, password, role }
-                ]);
+            const newOrder = {
+                client_name: clientName,
+                client_phone: clientPhone,
+                service_type: serviceType,
+                assigned_employee: document.getElementById('assignedEmployee').value,
+                client_file: fileUrl,
+                details: document.getElementById('details').value,
+                status: 'pending'
+            };
 
-                if (error) {
-                    showToast('حدث خطأ أثناء الحفظ في Supabase: ' + error.message, true);
-                } else {
-                    showToast(`تم إنشاء حساب الموظف (${name}) بنجاح!`);
-                    document.getElementById('addStaffForm').reset();
-                    fetchStaffFromSupabase();
-                }
-            } else {
-                // Local Fallback Simulation
-                localStaff.push({ id: Date.now(), name, username, role });
-                renderStaffList(localStaff);
-                showToast(`تم إضافة الموظف (${name}) في وضع العرض المحلي`);
-                document.getElementById('addStaffForm').reset();
-            }
-
-            btn.disabled = false;
-        }
-
-        // Update Order Status (Triggers Webhook via Supabase / Make.com)
-        async function toggleOrderStatus(orderId, currentStatus) {
-            const newStatus = currentStatus === 'مكتمل' ? 'قيد التنفيذ' : 'مكتمل';
+            const { error } = await supabaseClient.from('orders').insert([newOrder]);
             
-            if (supabaseClient) {
-                const { error } = await supabaseClient.from('orders').update({ status: newStatus }).eq('id', orderId);
-                if (error) {
-                    showToast('خطأ في تغيير حالة الطلب: ' + error.message, true);
-                } else {
-                    showToast(`تم تغيير الحالة إلى (${newStatus}) وإطلاق التنبيه!`);
-                    fetchOrdersFromSupabase();
-                }
+            btn.innerText = 'حفظ وإرسال الطلب للموظف';
+            btn.disabled = false;
+
+            if(error) {
+                alert('حدث خطأ أثناء إضافة الطلب: ' + error.message);
             } else {
-                const order = localOrders.find(o => o.id === orderId);
-                if (order) order.status = newStatus;
-                renderOrdersList(localOrders);
-                showToast(`تم تغيير الحالة إلى (${newStatus})`);
+                document.getElementById('orderForm').reset();
+                loadOrders();
+
+                const initMsg = `أهلاً بك عزيزي ${clientName} 🌸\n\nتم استلام طلبك (${serviceType}) بنجاح في منصة تيسير للخدمات العامة، وجاري العمل عليه بواسطة فريقنا المختص.\n\nيمكنك الاستعلام عن طلبك برقم جوالك عبر موقعنا الرسمي فور الانتهاء!`;
+                if(confirm('تم حفظ الطلب بنجاح! هل ترغب في فتح الواتساب لإرسال إشعار للعميل بحالة الاستلام؟')) {
+                    openWhatsApp(clientPhone, initMsg);
+                }
             }
         }
 
-        // Delete Staff Handler
-        async function deleteStaff(id) {
-            if (supabaseClient) {
-                const { error } = await supabaseClient.from('staff').delete().eq('id', id);
-                if (error) showToast(error.message, true);
-                else {
-                    showToast('تم حذف الموظف من القواعد');
-                    fetchStaffFromSupabase();
-                }
+        async function loadOrders() {
+            if(!currentUser) return;
+
+            const { data: orders, error } = await supabaseClient.from('orders').select('*').order('id', { ascending: false });
+            if(error) return;
+
+            allOrdersData = orders || [];
+
+            if(currentUser.role === 'admin') {
+                updateDashboardAnalytics();
+                renderAdminTable();
             } else {
-                localStaff = localStaff.filter(s => s.id !== id);
-                renderStaffList(localStaff);
-                showToast('تم حذف الموظف');
+                renderEmployeeView();
             }
         }
 
-        // Render Functions
-        function renderStaffList(list) {
-            const tbody = document.getElementById('staffTableBody');
-            tbody.innerHTML = '';
-            list.forEach(s => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3 font-bold text-slate-900">${s.name}</td>
-                        <td class="p-3 font-mono text-slate-600">${s.username}</td>
-                        <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">${s.role}</span></td>
-                        <td class="p-3 text-left">
-                            <button onclick="deleteStaff(${s.id})" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
+        function updateDashboardAnalytics() {
+            const total = allOrdersData.length;
+            const pending = allOrdersData.filter(o => o.status !== 'completed').length;
+            const completed = allOrdersData.filter(o => o.status === 'completed').length;
+
+            const activeEmps = new Set(allOrdersData.filter(o => o.status !== 'completed').map(o => o.assigned_employee));
+            const idleEmpsCount = employeeList.filter(emp => !activeEmps.has(emp)).length;
+
+            document.getElementById('kpiTotalOrders').innerText = total;
+            document.getElementById('kpiPendingOrders').innerText = pending;
+            document.getElementById('kpiCompletedOrders').innerText = completed;
+            document.getElementById('kpiIdleEmps').innerText = idleEmpsCount;
+
+            const badgesDiv = document.getElementById('empStatusBadges');
+            badgesDiv.innerHTML = employeeList.map(emp => {
+                const hasPending = activeEmps.has(emp);
+                return `
+                    <div class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border ${hasPending ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}">
+                        <span class="w-2 h-2 rounded-full ${hasPending ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}"></span>
+                        ${emp}: ${hasPending ? 'شغال على طلبات' : 'متفرغ (لا توجد أعمال قيد التنفيذ)'}
+                    </div>
                 `;
-            });
-            document.getElementById('statStaffCount').innerText = list.length;
+            }).join('');
+
+            renderCharts(pending, completed);
         }
 
-        function renderOrdersList(list) {
-            const tbody = document.getElementById('ordersTableBody');
-            tbody.innerHTML = '';
-            let completed = 0;
+        function renderCharts(pending, completed) {
+            const ctx1 = document.getElementById('statusChart').getContext('2d');
+            if(statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['قيد العمل', 'مكتملة'],
+                    datasets: [{
+                        data: [pending, completed],
+                        backgroundColor: ['#f59e0b', '#10b981']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
 
-            list.forEach(o => {
-                if(o.status === 'مكتمل') completed++;
-                const isCompleted = o.status === 'مكتمل';
-                const badge = isCompleted ? 
-                    `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold">مكتمل</span>` : 
-                    `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-bold">قيد التنفيذ</span>`;
+            const empCounts = employeeList.map(emp => allOrdersData.filter(o => o.assigned_employee === emp).length);
+            const ctx2 = document.getElementById('empChart').getContext('2d');
+            if(empChartInstance) empChartInstance.destroy();
+            empChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: employeeList,
+                    datasets: [{
+                        label: 'عدد الطلبات',
+                        data: empCounts,
+                        backgroundColor: '#2d6a4f'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3 font-bold">${o.id}</td>
-                        <td class="p-3">${o.customer_name}</td>
-                        <td class="p-3 font-mono text-slate-500">${o.phone}</td>
-                        <td class="p-3">${o.service}</td>
-                        <td class="p-3">${badge}</td>
-                        <td class="p-3 text-left">
-                            <button onclick="toggleOrderStatus('${o.id}', '${o.status}')" class="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-300 hover:bg-slate-900 hover:text-white transition-all">
-                                تغيير الحالة
+        function renderAdminTable() {
+            const empFilter = document.getElementById('filterEmp').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            let filtered = [...allOrdersData];
+
+            if(empFilter !== 'ALL') {
+                filtered = filtered.filter(o => o.assigned_employee === empFilter);
+            }
+            if(statusFilter !== 'ALL') {
+                filtered = filtered.filter(o => statusFilter === 'completed' ? o.status === 'completed' : o.status !== 'completed');
+            }
+
+            const adminTable = document.getElementById('adminOrdersTable');
+            if(filtered.length === 0) {
+                adminTable.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">لا توجد نتائج مطابقة للتصنيفات المختارة</td></tr>`;
+                return;
+            }
+
+            adminTable.innerHTML = filtered.map(o => {
+                const sendMsg = o.status === 'completed' 
+                    ? `أهلاً بك عزيزي ${o.client_name} 🎉\nتم إنجاز طلبك (${o.service_type}) بنجاح!\n\nيمكنك استلام وتفقد عملك عبر الرابط/الملف التالي:\n${o.work_link || o.work_file}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.`
+                    : `أهلاً بك عزيزي ${o.client_name} 🌸\nنود تذكيرك بأن طلبك (${o.service_type}) قيد العمل والتنفيذ حالياً لدى فريق تيسير.`;
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-semibold">#${o.id}</td>
+                        <td class="p-3">${o.client_name}</td>
+                        <td class="p-3 font-mono text-xs">${o.client_phone}</td>
+                        <td class="p-3">${o.service_type}</td>
+                        <td class="p-3"><span class="bg-[#2d6a4f]/10 text-[#2d6a4f] px-2 py-1 rounded text-xs font-medium">${o.assigned_employee}</span></td>
+                        <td class="p-3">
+                            ${o.client_file ? `<a href="${o.client_file}" target="_blank" class="text-[#2d6a4f] underline text-xs font-bold"><i class="fa-solid fa-paperclip ml-1"></i>عرض الملف</a>` : '-'}
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                ${o.status === 'completed' ? 'مكتمل ومسلّم' : 'قيد التنفيذ'}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="openWhatsApp('${o.client_phone}', \`${sendMsg}\`)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1 shadow-sm">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> إشعار بالواتس
                             </button>
                         </td>
                     </tr>
                 `;
-            });
-
-            document.getElementById('statOrdersCount').innerText = list.length;
-            document.getElementById('statCompletedCount').innerText = completed;
+            }).join('');
         }
 
-        function updateStats() {
-            document.getElementById('statStaffCount').innerText = localStaff.length;
-            document.getElementById('statOrdersCount').innerText = localOrders.length;
-            document.getElementById('statCompletedCount').innerText = localOrders.filter(o => o.status === 'مكتمل').length;
-        }
-
-        // Tab Navigation
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active', 'bg-brand-50', 'text-brand-700');
-                el.classList.add('text-slate-600');
-            });
-
-            document.getElementById('section-' + tabId).classList.remove('hidden');
-            const activeNav = document.getElementById('nav-' + tabId);
-            if (activeNav) {
-                activeNav.classList.add('active', 'bg-brand-50', 'text-brand-700');
+        function renderEmployeeView() {
+            const myOrders = allOrdersData.filter(o => o.assigned_employee === currentUser.name);
+            const empList = document.getElementById('empOrdersList');
+            
+            if(myOrders.length === 0) {
+                empList.innerHTML = `<p class="text-xs text-slate-400 col-span-2 text-center py-6">لا توجد مهام مسندة إليك حالياً.</p>`;
+                return;
             }
 
-            if (window.innerWidth < 1024) {
-                document.getElementById('sidebar').classList.add('translate-x-full');
+            empList.innerHTML = myOrders.map(o => `
+                <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs text-slate-400 font-mono">طلب #${o.id}</span>
+                            <h3 class="font-bold text-slate-800">${o.service_type}</h3>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-xs font-medium ${o.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${o.status === 'completed' ? 'مكتمل' : 'قيد العمل'}
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">${o.details}</p>
+                    
+                    ${o.client_file ? `
+                        <div class="bg-[#2d6a4f]/5 border border-[#2d6a4f]/20 p-2.5 rounded-lg flex items-center justify-between">
+                            <span class="text-xs text-[#2d6a4f] font-semibold"><i class="fa-solid fa-paperclip ml-1"></i>ملف العميل المرفق:</span>
+                            <a href="${o.client_file}" target="_blank" class="text-xs bg-[#2d6a4f] text-white px-3 py-1 rounded-md hover:bg-[#1b4332]">فتح الملف</a>
+                        </div>
+                    ` : ''}
+
+                    <div class="text-xs text-slate-500 flex justify-between items-center border-t border-slate-100 pt-2">
+                        <span>العميل: ${o.client_name}</span>
+                        <span class="font-mono bg-slate-100 px-2 py-0.5 rounded">الرقم: 05*****${o.client_phone ? o.client_phone.slice(-3) : '***'}</span>
+                    </div>
+                    
+                    ${o.status !== 'completed' ? `
+                        <div class="pt-2 space-y-2 border-t border-slate-100">
+                            <label class="block text-xs font-semibold text-slate-600">تسليم العمل النهائي:</label>
+                            <input type="url" id="link_${o.id}" placeholder="رابط العمل (Drive / Canva...)" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2d6a4f] focus:outline-none">
+                            <div>
+                                <label class="block text-xs text-slate-500 mb-1">أو ارفع ملف العمل من الجهاز:</label>
+                                <input type="file" id="file_picker_${o.id}" class="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs bg-slate-50 file:ml-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2d6a4f] file:text-white">
+                            </div>
+                            <button onclick="submitWork(${o.id})" id="btn_submit_${o.id}" class="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-xs font-medium py-2 rounded-lg transition">
+                                تسليم العمل (وإرسال عبر الواتساب)
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="pt-2 border-t border-slate-100 text-xs text-emerald-600 font-medium space-y-2">
+                            <div><i class="fa-solid fa-check-circle ml-1"></i> تم تسليم العمل بنجاح</div>
+                            <button onclick="openWhatsApp('${o.client_phone}', \`أهلاً بك عزيزي ${o.client_name} 🎉\nتم إنجاز طلبك (${o.service_type}) بنجاح!\n\nرابط العمل / الملف المرفق:\n${o.work_link || o.work_file}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.\`)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1 shadow-sm">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> إعادة إرسال الرابط للعميل بالواتس
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        async function submitWork(id) {
+            const linkInput = document.getElementById(`link_${id}`).value.trim();
+            const filePicker = document.getElementById(`file_picker_${id}`);
+            const btn = document.getElementById(`btn_submit_${id}`);
+
+            if(!linkInput && filePicker.files.length === 0) {
+                alert('يرجى إدخال رابط العمل أو اختيار ملف من الجهاز قبل التسليم');
+                return;
+            }
+
+            btn.innerText = 'جاري رفع الملف وتسليم العمل...';
+            btn.disabled = true;
+
+            let workFileUrl = '';
+            if(filePicker.files.length > 0) {
+                workFileUrl = await uploadFileToSupabase(`file_picker_${id}`);
+            }
+
+            const targetOrder = allOrdersData.find(o => o.id === id);
+
+            const { error } = await supabaseClient.from('orders').update({
+                work_link: linkInput || '',
+                work_file: workFileUrl || '',
+                status: 'completed'
+            }).eq('id', id);
+
+            if(error) {
+                alert('حدث خطأ أثناء التسليم: ' + error.message);
+                btn.innerText = 'تسليم العمل (وإرسال عبر الواتساب)';
+                btn.disabled = false;
+            } else {
+                alert('تم حفظ وتسليم العمل بنجاح!');
+                loadOrders();
+
+                const finalWorkUrl = linkInput || workFileUrl;
+                const deliveryMsg = `أهلاً بك عزيزي ${targetOrder ? targetOrder.client_name : ''} 🎉\n\nيسعدنا إبلاغك بأنه تم إنجاز طلبك (${targetOrder ? targetOrder.service_type : ''}) بنجاح!\n\n🔗 يمكنك معاينة واستلام عملك المنجز عبر الرابط التالي:\n${finalWorkUrl}\n\nشكراً لتعاملك مع منصة تيسير للخدمات العامة.`;
+                
+                openWhatsApp(targetOrder.client_phone, deliveryMsg);
             }
         }
-
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            document.getElementById('toastIcon').className = isError ? "fa-solid fa-circle-exclamation text-red-400" : "fa-solid fa-circle-check text-emerald-400";
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3500);
-        }
-
-        // On Load
-        window.onload = function() {
-            initSupabase();
-            document.getElementById('toggleSidebar').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('translate-x-full');
-            });
-        };
     </script>
 </body>
 </html>
